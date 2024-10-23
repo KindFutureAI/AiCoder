@@ -1,0 +1,15 @@
+exclude:
+  - 'utils.py'
+  - 'app_function.py'
+  - 'app_file_manager.py'
+  - '_app_main.py'
+  - '_app_src'
+  - 'utils'
+  - 'gui'
+  - '__pycache__'
+  - "files_exclude.yaml"
+  - "files_manager.yaml"
+  - "README.md"
+  - ".idea"
+  - ".gitignore"
+  - ".git"

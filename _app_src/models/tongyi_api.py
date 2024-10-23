@@ -1,15 +1,3 @@
-# AiCoder
-使用pyqt5做的代码注释工具Demo. 
-
-功能介绍：检索项目文件夹下面的目录，对目前文件中的代码进行手动选取，发送至Qwen2 等api进行代码注释
-
-## 快速开始
-1. **安装依赖包**
-   - 主要是pyqt5、opanai少数几个包，根据运行提示安装
-2. **配置密钥**
-```python
-# 在 _app_src/models/tongyi_api.py 写入api信息
-# 也可以在models中新增api
 import os
 from openai import OpenAI
 
@@ -49,10 +37,3 @@ class ModelQwenApi:
 if __name__ == "__main__":
     qwen_api = ModelQwenApi()
     print(qwen_api.get_answer("请帮我写一个冒泡排序的python代码"))
-```
-3. **运行 main.py**
-4. **界面显示**
-
-![img.png](_app_src/images/mainWindow1.png)
-
-![img.png](_app_src/images/img.png)
