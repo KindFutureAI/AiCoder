@@ -1,0 +1,9 @@
+# files
+.idea
+.vscode
+.git
+.DS_Store
+.github
+
+# dirs
+__pycache__
