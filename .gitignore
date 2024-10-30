@@ -4,6 +4,8 @@
 .git
 .DS_Store
 .github
+_app_src/models/tongyi_api.py
+
 
 # dirs
 __pycache__
