@@ -9,7 +9,8 @@ from _app_src.utils.app_file_manager import PyFileManager
 from _app_src.models.tongyi_api import ModelQwenApi
 from git.util import join_path
 
-# 加载配置文件
+
+# 加载配置文件 ——————————————————————————————————————————————————————————————————————
 file_manager = PyFileManager()
 files = file_manager.files
 
@@ -19,6 +20,8 @@ app_path = os.path.abspath(os.path.dirname(__file__))
 # 初始化模型api
 model = ModelQwenApi()
 
+
+# 设计主窗口 ——————————————————————————————————————————————————————————————————————
 class CodeWin(QMainWindow):
     def __init__(self, parent=None):
         super(CodeWin, self).__init__(parent)

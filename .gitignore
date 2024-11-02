@@ -4,8 +4,11 @@
 .git
 .DS_Store
 .github
-_app_src/models/tongyi_api.py
+.gitignore
 
+# 这里需要将名称为tongyi_api.py的文件记上，以免上传到github
+# 因为tongyi_api.py中使用了阿里云的API Key，如果上传到github，可能会导致API Key泄露
+_app_src/models/tongyi_api.py
 
 # dirs
 __pycache__

@@ -1,0 +1,145 @@
+import argparse
+import os
+import platform
+import shutil
+from copy import deepcopy
+from threading import Thread
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from transformers.trainer_utils import set_seed
+
+# DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-0.5B-Instruct"
+# DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-1.5B-Instruct"
+# DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-3B-Instruct"
+# DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+# DEFAULT_CKPT_PATH = "Qwen/Qwen2.5-Coder-7B-Instruct"
+# DEFAULT_CKPT_PATH = "Qwen/0_Qwen2.5_32B_diy"
+
+
+
+
+
+def _load_model_tokenizer(args):
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.checkpoint_path,
+        resume_download=True,
+    )
+  
+    model = AutoModelForCausalLM.from_pretrained(
+        args.checkpoint_path,
+        torch_dtype=torch.bfloat16,
+        device_map="auto" if torch.cuda.is_available() else "cpu", 
+    ).eval()
+    model.generation_config.max_new_tokens = 2048  # For chat.
+
+    return model, tokenizer
+
+
+def _gc(): 
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+ 
+
+def _print_history(history):
+    terminal_width = shutil.get_terminal_size()[0]
+    print(f"History ({len(history)})".center(terminal_width, "="))
+    for index, (query, response) in enumerate(history):
+        print(f"User[{index}]: {query}")
+        print(f"Qwen[{index}]: {response}")
+    print("=" * terminal_width)
+
+
+ 
+
+def _chat_stream(model, tokenizer, query, history):
+
+    conversation = []
+    for query_h, response_h in history:
+        conversation.append({"role": "user", "content": query_h})
+        conversation.append({"role": "assistant", "content": response_h})
+    conversation.append({"role": "user", "content": query})
+    input_text = tokenizer.apply_chat_template(
+        conversation,
+        add_generation_prompt=True,
+        tokenize=False,
+    )
+    inputs = tokenizer([input_text], return_tensors="pt").to(model.device)
+    generated_ids = model.generate(
+        **inputs,
+        max_new_tokens=64000,
+        top_k=1
+    )
+
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    print("----------------------------------")
+    print(f"input: {query}\nresult: {response}")
+    # streamer = TextIteratorStreamer(
+    #     tokenizer=tokenizer, skip_prompt=True, timeout=60.0, skip_special_tokens=True
+    # )
+    # generation_kwargs = {
+    #     **inputs,
+    #     "streamer": streamer,
+    # }
+    # thread = Thread(target=model.generate, kwargs=generation_kwargs)
+    # thread.start()
+
+    # for new_text in streamer:
+    #     yield new_text
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Qwen2.5-Instruct command-line interactive chat demo."
+    )
+    parser.add_argument(
+        "-c",
+        "--checkpoint-path",
+        type=str,
+        default=DEFAULT_CKPT_PATH,
+        help="Checkpoint name or path, default to %(default)r",
+    )
+    parser.add_argument("-s", "--seed", type=int, default=1234, help="Random seed")
+    parser.add_argument(
+        "--cpu-only", action="store_true", help="Run demo with CPU only"
+    )
+    args = parser.parse_args()
+
+    history, response = [], ""
+
+    model, tokenizer = _load_model_tokenizer(args)
+    orig_gen_config = deepcopy(model.generation_config)
+ 
+
+    seed = args.seed
+
+    while True:
+        query = "user input"  # 可以传入
+ 
+
+        # Run chat.
+        set_seed(seed) 
+        print(f"\nUser: {query}")
+        print(f"\nQwen: ", end="")
+        try:
+            partial_text = ""
+            for new_text in _chat_stream(model, tokenizer, query, history):
+                print(new_text, end="", flush=True)
+                partial_text += new_text
+            response = partial_text
+            print()
+
+        except KeyboardInterrupt:
+            print("[WARNING] Generation interrupted")
+            continue
+
+        history.append((query, response))
+
+
+if __name__ == "__main__":
+    main()
